@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+gate_state=$(mktemp -d /tmp/fileblade-memory-tests.XXXXXX)
+trap 'rm -rf -- "$gate_state"' EXIT
+export XDG_STATE_HOME="$gate_state"
+env -u QT_QPA_PLATFORMTHEME QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Basic \
+  /usr/lib/qt6/bin/qmltestrunner -platform offscreen -input tests/tst_keyplan.qml
+env -u QT_QPA_PLATFORMTHEME QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Basic \
+  /usr/lib/qt6/bin/qmltestrunner -platform offscreen -input tests/tst_service.qml
+env -u QT_QPA_PLATFORMTHEME QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Basic \
+  /usr/lib/qt6/bin/qmltestrunner -platform offscreen -input tests/tst_host_guard.qml
+PYTHONDONTWRITEBYTECODE=1 python3 tests/test_discovery.py
+PYTHONDONTWRITEBYTECODE=1 python3 tests/test_apply.py
+PYTHONDONTWRITEBYTECODE=1 python3 tests/test_path_identity.py
+PYTHONDONTWRITEBYTECODE=1 python3 tests/test_watch.py
+PYTHONDONTWRITEBYTECODE=1 python3 tests/test_contract.py
+core_tests=$(python3 -B -c 'import agent_memory, fileblade_paths; from pathlib import Path; print(Path(fileblade_paths.__file__).resolve().parents[1] / "tests/companion_readonly.py")')
+python3 -B "$core_tests" "$PWD" agent_memory agent-memoryctl
+python3 -m py_compile bin/agent-memoryctl agent_memory/*.py tests/*.py
+printf '%s\n' 'agent-memory checks: ok'
