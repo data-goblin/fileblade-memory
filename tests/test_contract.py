@@ -108,7 +108,8 @@ def qml_contract() -> None:
     service = (ROOT / "Service.qml").read_text(encoding="utf-8")
     assert "property var shell: null" in service and "required property" not in service
     assert 'context.ui.url("ArtifactInventory")' in service
-    assert "observers: Qt.binding(function() { return service.observers })" in service
+    provider = (ROOT / "Provider.qml").read_text(encoding="utf-8")
+    assert "observers: Qt.binding(function() { return provider.observers })" in provider
     helper = json.loads((ROOT / "manifest.json").read_text())["extensions"]["data-goblin.fileblade/helper"][0]
     assert helper == {"id": "inventory", "entry": "bin/agent-memoryctl", "read": ["list"], "write": ["apply"], "timeoutMs": 8000}
 
